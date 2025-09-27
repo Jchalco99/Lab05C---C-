@@ -5,31 +5,38 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Lab05C"
         mc:Ignorable="d"
-        Title="Gestión de Clientes" Height="650" Width="1100"
+        Title="Gestión de Clientes" Height="700" Width="1200"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5">
     <Window.Resources>
         <Style x:Key="ModernButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#007ACC"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="20,10"/>
-            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="15,12"/>
+            <Setter Property="Margin" Value="8,5"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Setter Property="MinHeight" Value="40"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="5"
-                                BorderThickness="0">
+                                CornerRadius="8"
+                                BorderThickness="0"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" 
-                                            VerticalAlignment="Center"/>
+                                            VerticalAlignment="Center"
+                                            TextBlock.TextAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#005A9E"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#003D6B"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -40,7 +47,8 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="80"/>
+            <RowDefinition Height="90"/>
+            <RowDefinition Height="70"/>
             <RowDefinition Height="60"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -53,7 +61,7 @@
                           FontWeight="Bold" 
                           Foreground="White"
                           HorizontalAlignment="Center"/>
-                <TextBlock Text="Sistema de Administración CRUD" 
+                <TextBlock Text="Sistema de Administración CRUD con Búsqueda" 
                           FontSize="14" 
                           Foreground="#BDC3C7"
                           HorizontalAlignment="Center"/>
@@ -61,9 +69,10 @@
         </Border>
 
         <!-- Buttons Panel -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" 
+        <WrapPanel Grid.Row="1" 
                    HorizontalAlignment="Center" 
-                   VerticalAlignment="Center">
+                   VerticalAlignment="Center"
+                   Orientation="Horizontal">
             <Button x:Name="btnListarClientes" 
                    Content="📋 Listar Clientes" 
                    Style="{StaticResource ModernButtonStyle}"
@@ -83,56 +92,125 @@
                    Style="{StaticResource ModernButtonStyle}"
                    Background="#E74C3C"
                    Click="BtnEliminarCliente_Click"/>
-        </StackPanel>
+        </WrapPanel>
+
+        <!-- Search Panel -->
+        <Border Grid.Row="2" Background="White" 
+               Margin="20,1"
+               CornerRadius="5"
+               BorderBrush="#E0E0E0" 
+               BorderThickness="1">
+            <Grid Margin="15,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                          Text="🔍 Buscar:" 
+                          VerticalAlignment="Center" 
+                          FontWeight="SemiBold" 
+                          FontSize="14"
+                          Foreground="#2C3E50"
+                          Margin="0,0,10,0"/>
+
+                <TextBox x:Name="txtBuscar" 
+                        Grid.Column="1"
+                        Height="35"
+                        Padding="10,5"
+                        FontSize="14"
+                        BorderBrush="#BDC3C7"
+                        BorderThickness="2"
+                        VerticalContentAlignment="Center"
+                        Margin="0,0,10,0"
+                        KeyDown="TxtBuscar_KeyDown"
+                        TextChanged="TxtBuscar_TextChanged"/>
+
+                <Button x:Name="btnBuscar" 
+                       Grid.Column="2"
+                       Content="🔍 Buscar" 
+                       Style="{StaticResource ModernButtonStyle}"
+                       Background="#9B59B6"
+                       Padding="15,8"
+                       Margin="0,0,5,0"
+                       Click="BtnBuscar_Click"/>
+
+                <Button x:Name="btnLimpiarBusqueda" 
+                       Grid.Column="3"
+                       Content="❌" 
+                       Style="{StaticResource ModernButtonStyle}"
+                       Background="#95A5A6"
+                       Padding="10,8"
+                       ToolTip="Limpiar búsqueda"
+                       Click="BtnLimpiarBusqueda_Click"/>
+            </Grid>
+        </Border>
 
         <!-- Content Area -->
-        <Border Grid.Row="2" Background="White" 
-               Margin="20" 
+        <Border Grid.Row="3" Background="White" 
+               Margin="20,0,20,20" 
                CornerRadius="10"
                BorderBrush="#E0E0E0" 
                BorderThickness="1">
             <Grid x:Name="contentGrid">
                 <!-- DataGrid for listing clients -->
-                <DataGrid x:Name="dgClientes" 
-                         Visibility="Collapsed"
-                         AutoGenerateColumns="False"
-                         CanUserAddRows="False"
-                         CanUserDeleteRows="False"
-                         IsReadOnly="True"
-                         GridLinesVisibility="Horizontal"
-                         HeadersVisibility="Column"
-                         Background="White"
-                         RowBackground="White"
-                         AlternatingRowBackground="#F8F9FA"
-                         BorderThickness="0"
-                         Margin="10"
-                         SelectionMode="Single"
-                         MouseDoubleClick="DgClientes_MouseDoubleClick">
+                <Grid x:Name="gridListaClientes" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                    <DataGrid.Resources>
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Background" Value="#34495E"/>
-                            <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="FontWeight" Value="Bold"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            <Setter Property="Padding" Value="10,8"/>
-                        </Style>
-                        <Style TargetType="DataGridCell">
-                            <Setter Property="Padding" Value="8,5"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                        </Style>
-                    </DataGrid.Resources>
+                    <!-- Results info -->
+                    <Border Grid.Row="0" Background="#ECF0F1" Padding="10,5" Margin="10,10,10,0">
+                        <TextBlock x:Name="lblResultados" 
+                                  Text="Mostrando todos los clientes" 
+                                  FontWeight="SemiBold"
+                                  Foreground="#2C3E50"/>
+                    </Border>
 
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="ID Cliente" Binding="{Binding IdCliente}" Width="80"/>
-                        <DataGridTextColumn Header="Compañía" Binding="{Binding NombreCompañia}" Width="150"/>
-                        <DataGridTextColumn Header="Contacto" Binding="{Binding NombreContacto}" Width="120"/>
-                        <DataGridTextColumn Header="Cargo" Binding="{Binding CargoContacto}" Width="120"/>
-                        <DataGridTextColumn Header="Ciudad" Binding="{Binding Ciudad}" Width="100"/>
-                        <DataGridTextColumn Header="País" Binding="{Binding Pais}" Width="100"/>
-                        <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="120"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                    <DataGrid x:Name="dgClientes" 
+                             Grid.Row="1"
+                             AutoGenerateColumns="False"
+                             CanUserAddRows="False"
+                             CanUserDeleteRows="False"
+                             IsReadOnly="True"
+                             GridLinesVisibility="Horizontal"
+                             HeadersVisibility="Column"
+                             Background="White"
+                             RowBackground="White"
+                             AlternatingRowBackground="#F8F9FA"
+                             BorderThickness="0"
+                             Margin="10"
+                             SelectionMode="Single"
+                             MouseDoubleClick="DgClientes_MouseDoubleClick">
+
+                        <DataGrid.Resources>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#34495E"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="10,8"/>
+                            </Style>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Padding" Value="8,5"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                            </Style>
+                        </DataGrid.Resources>
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID Cliente" Binding="{Binding IdCliente}" Width="80"/>
+                            <DataGridTextColumn Header="Compañía" Binding="{Binding NombreCompañia}" Width="150"/>
+                            <DataGridTextColumn Header="Contacto" Binding="{Binding NombreContacto}" Width="120"/>
+                            <DataGridTextColumn Header="Cargo" Binding="{Binding CargoContacto}" Width="120"/>
+                            <DataGridTextColumn Header="Ciudad" Binding="{Binding Ciudad}" Width="100"/>
+                            <DataGridTextColumn Header="País" Binding="{Binding Pais}" Width="100"/>
+                            <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="120"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
 
                 <!-- Form for registering/editing clients -->
                 <ScrollViewer x:Name="formScrollViewer" 
@@ -195,9 +273,9 @@
                         </Grid>
 
                         <!-- Buttons -->
-                        <StackPanel Orientation="Horizontal" 
-                                   HorizontalAlignment="Center" 
-                                   Margin="0,30,0,20">
+                        <WrapPanel HorizontalAlignment="Center" 
+                                  Margin="0,30,0,20"
+                                  Orientation="Horizontal">
                             <Button x:Name="btnGuardar" 
                                    Content="💾 Guardar Cliente" 
                                    Style="{StaticResource ModernButtonStyle}"
@@ -219,7 +297,7 @@
                                    Style="{StaticResource ModernButtonStyle}"
                                    Background="#E74C3C"
                                    Click="BtnCancelar_Click"/>
-                        </StackPanel>
+                        </WrapPanel>
                     </StackPanel>
                 </ScrollViewer>
 
@@ -241,12 +319,18 @@
                               FontSize="14" 
                               Foreground="#95A5A6"
                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="🔍 Usa la búsqueda para filtrar clientes por compañía" 
+                              FontSize="12" 
+                              FontStyle="Italic"
+                              Foreground="#BDC3C7"
+                              HorizontalAlignment="Center"
+                              Margin="0,5"/>
                     <TextBlock Text="💡 Doble clic en un cliente de la lista para editarlo" 
                               FontSize="12" 
                               FontStyle="Italic"
                               Foreground="#BDC3C7"
                               HorizontalAlignment="Center"
-                              Margin="0,10"/>
+                              Margin="0,5"/>
                 </StackPanel>
             </Grid>
         </Border>

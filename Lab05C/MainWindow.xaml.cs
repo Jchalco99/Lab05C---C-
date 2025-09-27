@@ -18,6 +18,7 @@ namespace Lab05C
     {
         private bool modoEdicion = false;
         private string clienteIdOriginal = "";
+        private bool enBusqueda = false;
 
         public MainWindow()
         {
@@ -31,9 +32,14 @@ namespace Lab05C
                 var clientes = Cliente.ListarClientes();
                 dgClientes.ItemsSource = clientes;
 
+                // Cambiar visibilidad
                 welcomePanel.Visibility = Visibility.Collapsed;
                 formScrollViewer.Visibility = Visibility.Collapsed;
-                dgClientes.Visibility = Visibility.Visible;
+                gridListaClientes.Visibility = Visibility.Visible;
+
+                // Actualizar estado
+                enBusqueda = false;
+                lblResultados.Text = $"Mostrando todos los clientes ({clientes.Count} registros)";
 
                 MessageBox.Show($"Se cargaron {clientes.Count} clientes", "Información",
                                MessageBoxButton.OK, MessageBoxImage.Information);
@@ -45,13 +51,92 @@ namespace Lab05C
             }
         }
 
+        private void BtnBuscar_Click(object sender, RoutedEventArgs e)
+        {
+            RealizarBusqueda();
+        }
+
+        private void TxtBuscar_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                RealizarBusqueda();
+            }
+        }
+
+        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Búsqueda automática mientras escribe (opcional)
+            if (string.IsNullOrWhiteSpace(txtBuscar.Text) && enBusqueda)
+            {
+                // Si borra todo el texto, mostrar todos los clientes
+                BtnListarClientes_Click(sender, new RoutedEventArgs());
+            }
+        }
+
+        private void BtnLimpiarBusqueda_Click(object sender, RoutedEventArgs e)
+        {
+            txtBuscar.Clear();
+            if (enBusqueda)
+            {
+                BtnListarClientes_Click(sender, new RoutedEventArgs());
+            }
+            txtBuscar.Focus();
+        }
+
+        private void RealizarBusqueda()
+        {
+            string terminoBusqueda = txtBuscar.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(terminoBusqueda))
+            {
+                MessageBox.Show("⚠️ Por favor ingrese un término de búsqueda", "Búsqueda vacía",
+                               MessageBoxButton.OK, MessageBoxImage.Warning);
+                txtBuscar.Focus();
+                return;
+            }
+
+            try
+            {
+                var clientesEncontrados = Cliente.BuscarClientes(terminoBusqueda);
+                dgClientes.ItemsSource = clientesEncontrados;
+
+                // Cambiar visibilidad
+                welcomePanel.Visibility = Visibility.Collapsed;
+                formScrollViewer.Visibility = Visibility.Collapsed;
+                gridListaClientes.Visibility = Visibility.Visible;
+
+                // Actualizar estado
+                enBusqueda = true;
+                lblResultados.Text = $"Resultados de búsqueda para '{terminoBusqueda}': {clientesEncontrados.Count} cliente(s) encontrado(s)";
+
+                if (clientesEncontrados.Count == 0)
+                {
+                    MessageBox.Show($"🔍 No se encontraron clientes con el término '{terminoBusqueda}'", "Sin resultados",
+                                   MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show($"✅ Se encontraron {clientesEncontrados.Count} cliente(s)", "Búsqueda exitosa",
+                                   MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"❌ Error en la búsqueda: {ex.Message}", "Error",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void BtnRegistrarCliente_Click(object sender, RoutedEventArgs e)
         {
+            // Configurar modo registro
             modoEdicion = false;
             ConfigurarModoFormulario();
 
+            // Cambiar visibilidad
             welcomePanel.Visibility = Visibility.Collapsed;
-            dgClientes.Visibility = Visibility.Collapsed;
+            gridListaClientes.Visibility = Visibility.Collapsed;
             formScrollViewer.Visibility = Visibility.Visible;
 
             LimpiarCampos();
@@ -95,8 +180,15 @@ namespace Lab05C
                             MessageBox.Show("✅ Cliente eliminado exitosamente", "Éxito",
                                            MessageBoxButton.OK, MessageBoxImage.Information);
 
-                            // Recargar la lista
-                            BtnListarClientes_Click(sender, e);
+                            // Recargar la lista según el estado actual
+                            if (enBusqueda && !string.IsNullOrWhiteSpace(txtBuscar.Text))
+                            {
+                                RealizarBusqueda();
+                            }
+                            else
+                            {
+                                BtnListarClientes_Click(sender, e);
+                            }
                         }
                         else
                         {
@@ -239,7 +331,15 @@ namespace Lab05C
                             MessageBox.Show("✅ Cliente actualizado exitosamente", "Éxito",
                                            MessageBoxButton.OK, MessageBoxImage.Information);
 
-                            BtnListarClientes_Click(sender, e);
+                            // Recargar la lista según el estado actual
+                            if (enBusqueda && !string.IsNullOrWhiteSpace(txtBuscar.Text))
+                            {
+                                RealizarBusqueda();
+                            }
+                            else
+                            {
+                                BtnListarClientes_Click(sender, e);
+                            }
                         }
                         else
                         {
@@ -289,10 +389,12 @@ namespace Lab05C
 
         private void EditarCliente(Cliente cliente)
         {
+            // Configurar modo edición
             modoEdicion = true;
             clienteIdOriginal = cliente.IdCliente;
             ConfigurarModoFormulario();
 
+            // Llenar campos con datos del cliente
             txtIdCliente.Text = cliente.IdCliente;
             txtNombreCompañia.Text = cliente.NombreCompañia;
             txtNombreContacto.Text = cliente.NombreContacto;
@@ -305,9 +407,11 @@ namespace Lab05C
             txtTelefono.Text = cliente.Telefono;
             txtFax.Text = cliente.Fax;
 
+            // Deshabilitar edición del ID
             txtIdCliente.IsEnabled = false;
 
-            dgClientes.Visibility = Visibility.Collapsed;
+            // Cambiar visibilidad
+            gridListaClientes.Visibility = Visibility.Collapsed;
             welcomePanel.Visibility = Visibility.Collapsed;
             formScrollViewer.Visibility = Visibility.Visible;
 
@@ -334,11 +438,13 @@ namespace Lab05C
 
         private void MostrarPanelBienvenida()
         {
+            // Resetear modo
             modoEdicion = false;
             txtIdCliente.IsEnabled = true;
 
+            // Cambiar visibilidad
             formScrollViewer.Visibility = Visibility.Collapsed;
-            dgClientes.Visibility = Visibility.Collapsed;
+            gridListaClientes.Visibility = Visibility.Collapsed;
             welcomePanel.Visibility = Visibility.Visible;
 
             LimpiarCampos();

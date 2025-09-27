@@ -93,6 +93,52 @@ namespace Lab05C
             return listaClientes;
         }
 
+        public static List<Cliente> BuscarClientes(string nombreCompania)
+        {
+            List<Cliente> listaClientes = new List<Cliente>();
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    using (SqlCommand command = new SqlCommand("USP_BuscarClientes", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.Parameters.AddWithValue("@nombreCompania", nombreCompania ?? string.Empty);
+                        connection.Open();
+
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                Cliente cliente = new Cliente
+                                {
+                                    IdCliente = reader["idCliente"].ToString(),
+                                    NombreCompañia = reader["NombreCompañia"].ToString(),
+                                    NombreContacto = reader["NombreContacto"].ToString(),
+                                    CargoContacto = reader["CargoContacto"].ToString(),
+                                    Direccion = reader["Direccion"].ToString(),
+                                    Ciudad = reader["Ciudad"].ToString(),
+                                    Region = reader["Region"].ToString(),
+                                    CodPostal = reader["CodPostal"].ToString(),
+                                    Pais = reader["Pais"].ToString(),
+                                    Telefono = reader["Telefono"].ToString(),
+                                    Fax = reader["Fax"].ToString()
+                                };
+                                listaClientes.Add(cliente);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al buscar clientes: {ex.Message}");
+            }
+
+            return listaClientes;
+        }
+
         public static bool InsertarCliente(Cliente cliente)
         {
             try
